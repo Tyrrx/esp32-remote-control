@@ -1,5 +1,5 @@
-#ifndef ESP32_PACKET_H
-#define ESP32_PACKET_H
+#ifndef REMOTECONTROL_PACKET_H
+#define REMOTECONTROL_PACKET_H
 
 #include <AES.h>
 #include <Arduino.h>
@@ -24,6 +24,8 @@ class Packet {
     bool hasHash;
     bool hasHeader;
 
+    uint8_t packetType;
+
     uint8_t *buffer;
     uint8_t *payload;
     uint8_t *hash;
@@ -46,8 +48,11 @@ class Packet {
     bool parseBuffer();
 
    public:
-    Packet(AuthenticatedCipher *cipher);
+    Packet(AuthenticatedCipher *cipher, uint8_t bufferSize);
     ~Packet();
+
+    void setPacketType(uint8_t type);
+    uint8_t getPacketType();
 
     bool prepareBuffer(uint8_t size);
     bool preparePacketHeaderBuffer();
@@ -55,8 +60,11 @@ class Packet {
     bool prepareHashBuffer();
     bool preparePayloadBuffer();
 
-    bool validate();
-    uint8_t build();
+    bool validatePacket();
+    uint8_t buildPacket();
+
+    virtual bool build();
+    virtual bool parse();
 
     bool isEmpty();
     bool isValid();
@@ -83,13 +91,13 @@ class Packet {
     uint8_t getMaxPayloadSize();
 
     void setRssi(int16_t rssi);
-    void setTimestamp();
-
     int16_t getRssi();
+
     uint32_t getTimestamp();
+    void setTimestamp();
 };
 
-Packet::Packet(AuthenticatedCipher *cipher) {
+Packet::Packet(AuthenticatedCipher *cipher, uint8_t bufferSize) {
     this->setTimestamp();
     this->cipher = cipher;
     this->setHashSize(this->cipher->tagSize());
@@ -110,7 +118,8 @@ Packet::Packet(AuthenticatedCipher *cipher) {
     this->hasHash = false;
     this->hasHeader = false;
 
-    this->setPacketHeaderSize(2);
+    this->setPacketHeaderSize(3);
+    this->prepareBuffer(bufferSize);
 }
 
 Packet::~Packet() {
@@ -134,6 +143,7 @@ bool Packet::parseBuffer() {
     if (this->hasBuffer && this->preparePacketHeaderBuffer() && this->prepareHeaderBuffer() && this->prepareHashBuffer() && this->preparePayloadBuffer()) {
         this->setHeaderSize(this->buffer[0]);
         this->setPayloadSize(this->buffer[1]);
+        this->setPacketType(this->buffer[2]);
         uint8_t startIndex = 0;
         for (uint8_t i = 0; i < this->getPacketHeaderSize(); i++) {
             this->packetHeader[i] = this->buffer[i + startIndex];
@@ -196,7 +206,7 @@ bool Packet::prepareBuffer(uint8_t size) {
     return false;
 }
 
-bool Packet::validate() {
+bool Packet::validatePacket() {
     if (this->parseBuffer()) {
         this->cipher->addAuthData(this->packetHeader, this->getPacketHeaderSize());
         this->cipher->addAuthData(this->header, this->getHeaderSize());
@@ -208,7 +218,7 @@ bool Packet::validate() {
     }
     return false;
 }
-uint8_t Packet::build() {
+uint8_t Packet::buildPacket() {
     if (this->hasHeaderBuffer &&
         this->hasPayloadBuffer &&
         //  this->hasHeader &&
@@ -220,6 +230,7 @@ uint8_t Packet::build() {
 
         this->packetHeader[0] = this->getHeaderSize();
         this->packetHeader[1] = this->getPayloadSize();
+        this->packetHeader[2] = this->getPacketType();
 
         this->cipher->addAuthData(this->packetHeader, this->getPacketHeaderSize());
         this->cipher->addAuthData(this->header, this->getHeaderSize());
@@ -256,6 +267,9 @@ uint8_t Packet::build() {
 
 bool Packet::isEmpty() { return !this->hasBuffer && !this->hasHashBuffer && !this->hasPacketHeaderBuffer && !this->hasHeaderBuffer && !this->hasPayloadBuffer; }
 bool Packet::isValid() { return this->valid; }
+
+void Packet::setPacketType(uint8_t type) { this->packetType = type; }
+uint8_t Packet::getPacketType() { return this->packetType; }
 
 uint8_t *Packet::getBuffer() { return this->buffer; }
 uint8_t *Packet::getPayload() { return this->payload; }
