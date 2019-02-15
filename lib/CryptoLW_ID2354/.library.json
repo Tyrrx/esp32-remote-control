@@ -1,0 +1,44 @@
+{
+    "name": "CryptoLW", 
+    "version": "0.2.0", 
+    "keywords": [
+        "acorn128", 
+        "ascon128", 
+        "speck", 
+        "specksmall", 
+        "specktiny"
+    ], 
+    "description": "Light-weight ciphers for the Arduino Cryptography Library", 
+    "authors": [
+        {
+            "email": "rhys.weatherley@gmail.com", 
+            "url": "https://rweather.github.io/arduinolibs/crypto.html", 
+            "maintainer": false, 
+            "name": "Rhys Weatherley"
+        }
+    ], 
+    "export": {
+        "include": "libraries/CryptoLW"
+    }, 
+    "repository": {
+        "type": "git", 
+        "url": "https://github.com/rweather/arduinolibs.git"
+    }, 
+    "frameworks": [
+        "arduino"
+    ], 
+    "platforms": [
+        "atmelavr", 
+        "atmelsam", 
+        "espressif32", 
+        "espressif8266", 
+        "intel_arc32", 
+        "microchippic32", 
+        "nordicnrf51", 
+        "nordicnrf52", 
+        "ststm32", 
+        "teensy", 
+        "timsp430"
+    ], 
+    "id": 2354
+}
