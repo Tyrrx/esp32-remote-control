@@ -16,8 +16,3 @@ void loop() {
         //do something
     }
 }
-
-void exampleCallback(ExamplePacket *packet) {
-    Serial.println(packet->getPayloadExample());
-    Serial.println(packet->getHeaderExample());
-}

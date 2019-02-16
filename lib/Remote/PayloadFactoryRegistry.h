@@ -3,26 +3,44 @@
 
 //#include <AbstractPayload.h>
 #include <AbstractPayloadFactory.h>
+#include <LinkedList.h>
 
 class PayloadFactoryRegistry {
    private:
-    AbstractPayloadFactory *registry;
+    AbstractPayloadFactory *abstractFactories;
+    uint16_t factoryCount;
 
    public:
-    PayloadFactoryRegistry(size_t factoryCount);
+    PayloadFactoryRegistry(uint16_t count);
     ~PayloadFactoryRegistry();
 
-    void registerFactory(AbstractPayloadFactory *abstractFactory);
+    void registerFactory(uint16_t type, AbstractPayloadFactory *abstractFactory);
+
+    AbstractPayloadFactory *getFactory(uint16_t type);
 };
 
-PayloadFactoryRegistry::PayloadFactoryRegistry(size_t factoryCount) {
-    this->registry = new AbstractPayloadFactory[factoryCount];
+PayloadFactoryRegistry::PayloadFactoryRegistry(uint16_t count) {
+    this->abstractFactories = new AbstractPayloadFactory[count];
+    this->factoryCount = count;
 }
 
 PayloadFactoryRegistry::~PayloadFactoryRegistry() {
+    if (this->abstractFactories != nullptr) {
+        delete this->abstractFactories;
+    }
 }
 
-void PayloadFactoryRegistry::registerFactory(AbstractPayloadFactory *abstractFactory) {
+void PayloadFactoryRegistry::registerFactory(uint16_t type, AbstractPayloadFactory *abstractFactory) {
+    if (type < this->factoryCount) {
+        this->abstractFactories[type] = abstractFactory;
+    }
+}
+
+AbstractPayloadFactory *PayloadFactoryRegistry::getFactory(uint16_t type) {
+    if (type < this->factoryCount) {
+        return this->abstractFactories[type];
+    }
+    return nullptr;
 }
 
 #endif

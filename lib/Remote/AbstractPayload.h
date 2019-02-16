@@ -4,11 +4,13 @@ class AbstractPayload {
    private:
     /* data */
    public:
-    AbstractPayload(/* args */);
+    AbstractPayload();
     ~AbstractPayload();
+
+    virtual bool execute() = 0;
 };
 
-AbstractPayload::AbstractPayload(/* args */) {
+AbstractPayload::AbstractPayload() {
 }
 
 AbstractPayload::~AbstractPayload() {

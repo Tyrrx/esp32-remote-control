@@ -6,7 +6,6 @@
 #define REMOTECONTROL_REMOTE_H
 
 #include <Arduino.h>
-#include <ExamplePacket.h>
 #include <LoRa.h>
 #include <Packet.h>
 #include <esp_system.h>
@@ -22,28 +21,17 @@ class Remote {
 
     bool receive();
 
-    Packet *getInputPacket();
-
-    Packet *createOutputPacket();
-
     uint32_t send();
 
     void createIv();
 
     AuthenticatedCipher *getCipher();
 
-    void handlePacket(Packet packet);
-    void registerPacket();
-
    private:
     uint8_t syncWord;
     uint8_t txPower;
 
-    Packet *inputPacket;
-    Packet *outputPacket;
-
     AuthenticatedCipher *cipher;
-    //    Random *random;
     uint8_t *key;
     uint8_t *iv;
     bool isValid;
@@ -69,7 +57,6 @@ Remote::Remote(AuthenticatedCipher *cipher, uint8_t *key, uint32_t keySize) {
 
     this->isValid = this->setupLoRa();
 
-    //this->random = new Random();
     this->cipher = cipher;
 
     if (this->cipher->keySize() == keySize) {
@@ -104,30 +91,20 @@ bool Remote::receive() {
     uint16_t packetSize = LoRa.parsePacket();
     if (packetSize) {
         this->prepareCipher();
-        this->inputPacket = new Packet(this->cipher, packetSize);
-        LoRa.readBytes(inputPacket->getBuffer(), packetSize);
-        this->inputPacket->setRssi(LoRa.packetRssi());
-        return this->inputPacket->validatePacket();
+        // this->inputPacket = new Packet(this->cipher, packetSize);
+        // LoRa.readBytes(inputPacket->getBuffer(), packetSize);
+        // this->inputPacket->setRssi(LoRa.packetRssi());
+        //return this->inputPacket->validatePacket();
     }
     return false;
 }
 
-Packet *Remote::getInputPacket() {
-    return this->inputPacket;
-}
-/*
-Packet *Remote::createOutputPacket() {
-    this->outputPacket = new Packet(this->cipher);
-    return this->outputPacket;
-}
-*/
-
 uint32_t Remote::send() {
     uint32_t time = millis();
     this->prepareCipher();
-    uint8_t size = this->outputPacket->buildPacket();
+    //uint8_t size = this->outputPacket->buildPacket();
     LoRa.beginPacket();
-    LoRa.write(this->outputPacket->getBuffer(), size);
+    //LoRa.write(this->outputPacket->getBuffer(), size);
     LoRa.endPacket();
     return millis() - time;
 }
