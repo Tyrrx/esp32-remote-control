@@ -63,9 +63,6 @@ class Packet {
     bool validatePacket();
     uint8_t buildPacket();
 
-    virtual bool build();
-    virtual bool parse();
-
     bool isEmpty();
     bool isValid();
 
