@@ -1,9 +1,9 @@
 #ifndef REMOTECONTROL_PAYLOADFACTORYREGISTRY_H
 #define REMOTECONTROL_PAYLOADFACTORYREGISTRY_H
 
-//#include <AbstractPayload.h>
 #include <AbstractPayloadFactory.h>
-#include <LinkedList.h>
+#include <ExamplePayloadFactory.h>
+#include <PayloadType.h>
 
 class PayloadFactoryRegistry {
    private:

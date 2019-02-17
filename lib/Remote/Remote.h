@@ -6,16 +6,12 @@
 #define REMOTECONTROL_REMOTE_H
 
 #include <Arduino.h>
-#include <ExamplePayloadFactory.h>
 #include <LoRa.h>
-#include <Packet.h>
+#include <esp_system.h>
+
 #include <PacketBuilder.h>
 #include <PayloadFactoryRegistry.h>
-#include <PayloadType.h>
-#include <esp_system.h>
-#include <string.h>
-
-//#include <Payload.h>
+#include <SmartPtr.h>
 
 class Remote {
    public:
@@ -26,32 +22,34 @@ class Remote {
     bool send(AbstractPayload *abstractPayload);
 
    private:
-    uint8_t syncWord;
+    // General settings of WIFI LoRa 32
+    const uint8_t syncWord = 0x8E;
+    const bool paboost = true;
+    const double band = 868E6;
+    const double bandwidth = 250E3;
+    const uint8_t spreadingFactor = 7;
+
+    // Pin definetion of WIFI LoRa 32
+    const uint8_t sck = 5;    // GPIO5  -- SX1278's SCK
+    const uint8_t miso = 19;  // GPIO19 -- SX1278's MISO
+    const uint8_t mosi = 27;  // GPIO27 -- SX1278's MOSI
+    const uint8_t ss = 18;    // GPIO18 -- SX1278's CS
+    const uint8_t rst = 14;   // GPIO14 -- SX1278's RESET
+    const uint8_t di0 = 26;   // GPIO26 -- SX1278's IRQ(Interrupt Request)
+
     uint8_t txPower;
-    bool isValid;
+
+    bool valid;
 
     PayloadFactoryRegistry *registry;
     PacketBuilder *packetBuilder;
 
-   private:
     bool setupLoRa();
 };
 
-// Pin definetion of WIFI LoRa 32
-#define SCK 5    // GPIO5  -- SX1278's SCK
-#define MISO 19  // GPIO19 -- SX1278's MISO
-#define MOSI 27  // GPIO27 -- SX1278's MOSI
-#define SS 18    // GPIO18 -- SX1278's CS
-#define RST 14   // GPIO14 -- SX1278's RESET
-#define DI0 26   // GPIO26 -- SX1278's IRQ(Interrupt Request)
-
-#define BAND 868E6  //you can set band here directly,e.g. 868E6,915E6
-#define PABOOST true
-
 Remote::Remote(uint8_t *key, uint32_t keySize) {
-    this->syncWord = 0x8E;
     this->txPower = 10;
-    this->isValid = this->setupLoRa();
+    this->valid = this->setupLoRa();
 
     this->packetBuilder = new PacketBuilder(key, keySize);
     this->registry = new PayloadFactoryRegistry(1);
@@ -76,51 +74,38 @@ bool Remote::receive() {
     uint16_t packetSize = LoRa.parsePacket();
     if (packetSize) {
         Packet *packet = this->packetBuilder->create(packetSize);
+        //SmartPtr<Packet> packet(this->packetBuilder->create(packetSize));
         LoRa.readBytes(packet->getBuffer(), packet->getBufferSize());
         packet->setRssi(LoRa.packetRssi());
         if (this->packetBuilder->decode(packet)) {
-            return this->registry->getFactory(packet->getPacketType())->create(packet->getHeader())->execute(packet->getPayload());
+            this->registry->getFactory(packet->getPacketType())->create(packet->getHeader())->execute(packet->getPayload());
+            return true;
         }
     }
     return false;
 }
 
 bool Remote::send(AbstractPayload *abstractPayload) {
+    uint32_t time = millis();
     Packet *packet = this->packetBuilder->encode(abstractPayload);
     LoRa.beginPacket();
     LoRa.write(packet->getBuffer(), packet->getBufferSize());
     LoRa.endPacket();
+    time = millis() - time;
     return true;
 }
-/*
-uint32_t Remote::send() {
-    uint32_t time = millis();
-    //uint8_t size = this->outputPacket->buildPacket();
-    LoRa.beginPacket();
-    //LoRa.write(this->outputPacket->getBuffer(), size);
-    LoRa.endPacket();
-    return millis() - time;
-}
-*/
-/*
-AuthenticatedCipher *Remote::getCipher() {
-    this->cipher->clear();
-    this->cipher->setKey(this->key, this->cipher->keySize());
-    this->cipher->setIV(this->iv, this->cipher->ivSize());
-    return this->cipher;
-}
-*/
+
 bool Remote::setupLoRa() {
-    SPI.begin(SCK, MISO, MOSI, SS);
-    LoRa.setPins(SS, RST, DI0);
-    LoRa.setPins(SS, RST, DI0);
-    if (!LoRa.begin(BAND, PABOOST)) {
+    SPI.begin(this->sck, this->miso, this->mosi, this->ss);
+    LoRa.setPins(this->ss, this->rst, this->di0);
+    LoRa.setPins(this->ss, this->rst, this->di0);
+    if (!LoRa.begin(this->band, this->paboost)) {
         return false;
     }
     LoRa.setTxPower(this->txPower, 2);
     LoRa.setSyncWord(this->syncWord);
-    LoRa.setSignalBandwidth(250E3);
-    LoRa.setSpreadingFactor(7);
+    LoRa.setSignalBandwidth(this->bandwidth);
+    LoRa.setSpreadingFactor(this->spreadingFactor);
     return true;
 }
 
