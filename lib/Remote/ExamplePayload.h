@@ -3,22 +3,34 @@
 
 #include <AbstractPayload.h>
 
-class ExamplePayload : AbstractPayload {
+class ExamplePayload : public AbstractPayload {
    private:
-    /* data */
+    const uint8_t headerSize = 1;
+    const uint8_t payloadSize = 1;
+    const uint8_t type = PayloadType::EXAMPLE_PAYLOAD;
+
    public:
-    ExamplePayload(/* args */);
+    ExamplePayload();
     ~ExamplePayload();
-    bool execute();
+    bool execute(uint8_t* packetPayload);
+    bool build(Packet* packet);
 };
 
-ExamplePayload::ExamplePayload(/* args */) {
+ExamplePayload::ExamplePayload() {
 }
 
 ExamplePayload::~ExamplePayload() {
 }
 
-bool ExamplePayload::execute() {
+bool ExamplePayload::execute(uint8_t* packetPayload) {
+    return true;
+}
+
+bool ExamplePayload::build(Packet* packet) {
+    packet->setPacketType(this->type);
+    packet->createHeaderBuffer(this->headerSize);
+    packet->createPayloadBuffer(this->payloadSize);
+    return true;
 }
 
 #endif

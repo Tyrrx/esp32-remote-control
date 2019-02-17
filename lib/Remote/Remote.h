@@ -6,8 +6,12 @@
 #define REMOTECONTROL_REMOTE_H
 
 #include <Arduino.h>
+#include <ExamplePayloadFactory.h>
 #include <LoRa.h>
 #include <Packet.h>
+#include <PacketBuilder.h>
+#include <PayloadFactoryRegistry.h>
+#include <PayloadType.h>
 #include <esp_system.h>
 #include <string.h>
 
@@ -15,26 +19,19 @@
 
 class Remote {
    public:
-    Remote(AuthenticatedCipher *cipher, uint8_t *key, uint32_t keySize);
-
-    void prepareCipher();
+    Remote(uint8_t *key, uint32_t keySize);
 
     bool receive();
 
-    uint32_t send();
-
-    void createIv();
-
-    AuthenticatedCipher *getCipher();
+    bool send(AbstractPayload *abstractPayload);
 
    private:
     uint8_t syncWord;
     uint8_t txPower;
-
-    AuthenticatedCipher *cipher;
-    uint8_t *key;
-    uint8_t *iv;
     bool isValid;
+
+    PayloadFactoryRegistry *registry;
+    PacketBuilder *packetBuilder;
 
    private:
     bool setupLoRa();
@@ -51,28 +48,16 @@ class Remote {
 #define BAND 868E6  //you can set band here directly,e.g. 868E6,915E6
 #define PABOOST true
 
-Remote::Remote(AuthenticatedCipher *cipher, uint8_t *key, uint32_t keySize) {
+Remote::Remote(uint8_t *key, uint32_t keySize) {
     this->syncWord = 0x8E;
     this->txPower = 10;
-
     this->isValid = this->setupLoRa();
 
-    this->cipher = cipher;
-
-    if (this->cipher->keySize() == keySize) {
-        this->key = new uint8_t[this->cipher->keySize()];
-        this->iv = new uint8_t[this->cipher->ivSize()];
-        memcpy(this->key, key, keySize);
-        this->createIv();
-        this->isValid = true;
-    }
+    this->packetBuilder = new PacketBuilder(key, keySize);
+    this->registry = new PayloadFactoryRegistry(1);
+    this->registry->registerFactory(PayloadType::EXAMPLE_PAYLOAD, new ExamplePayloadFactory());
 }
 
-void Remote::prepareCipher() {
-    this->cipher->clear();
-    this->cipher->setKey(this->key, this->cipher->keySize());
-    this->cipher->setIV(this->iv, this->cipher->ivSize());
-}
 /*
 bool Remote::updateControl(int *channels, int size) {
     if (size <= channelCount) {
@@ -90,37 +75,41 @@ bool Remote::updateControl(int *channels, int size) {
 bool Remote::receive() {
     uint16_t packetSize = LoRa.parsePacket();
     if (packetSize) {
-        this->prepareCipher();
-        // this->inputPacket = new Packet(this->cipher, packetSize);
-        // LoRa.readBytes(inputPacket->getBuffer(), packetSize);
-        // this->inputPacket->setRssi(LoRa.packetRssi());
-        //return this->inputPacket->validatePacket();
+        Packet *packet = this->packetBuilder->create(packetSize);
+        LoRa.readBytes(packet->getBuffer(), packet->getBufferSize());
+        packet->setRssi(LoRa.packetRssi());
+        if (this->packetBuilder->decode(packet)) {
+            return this->registry->getFactory(packet->getPacketType())->create(packet->getHeader())->execute(packet->getPayload());
+        }
     }
     return false;
 }
 
+bool Remote::send(AbstractPayload *abstractPayload) {
+    Packet *packet = this->packetBuilder->encode(abstractPayload);
+    LoRa.beginPacket();
+    LoRa.write(packet->getBuffer(), packet->getBufferSize());
+    LoRa.endPacket();
+    return true;
+}
+/*
 uint32_t Remote::send() {
     uint32_t time = millis();
-    this->prepareCipher();
     //uint8_t size = this->outputPacket->buildPacket();
     LoRa.beginPacket();
     //LoRa.write(this->outputPacket->getBuffer(), size);
     LoRa.endPacket();
     return millis() - time;
 }
-void Remote::createIv() {
-    uint32_t size = this->cipher->ivSize();
-    for (uint8_t i = 0; i < size; i++) {
-        this->iv[i] = 255;
-    }
-
-    //this->random->randomBytes(this->iv, size);
-}
-
+*/
+/*
 AuthenticatedCipher *Remote::getCipher() {
+    this->cipher->clear();
+    this->cipher->setKey(this->key, this->cipher->keySize());
+    this->cipher->setIV(this->iv, this->cipher->ivSize());
     return this->cipher;
 }
-
+*/
 bool Remote::setupLoRa() {
     SPI.begin(SCK, MISO, MOSI, SS);
     LoRa.setPins(SS, RST, DI0);

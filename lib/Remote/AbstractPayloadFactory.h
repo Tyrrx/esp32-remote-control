@@ -9,7 +9,7 @@ class AbstractPayloadFactory {
     AbstractPayloadFactory();
     ~AbstractPayloadFactory();
 
-    virtual AbstractPayload *create() = 0;
+    virtual AbstractPayload *create(uint8_t *packetHeader);
 };
 
 AbstractPayloadFactory::AbstractPayloadFactory() {

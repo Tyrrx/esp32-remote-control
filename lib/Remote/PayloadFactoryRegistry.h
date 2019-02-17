@@ -7,7 +7,7 @@
 
 class PayloadFactoryRegistry {
    private:
-    AbstractPayloadFactory *abstractFactories;
+    AbstractPayloadFactory **abstractFactories;
     uint16_t factoryCount;
 
    public:
@@ -20,14 +20,11 @@ class PayloadFactoryRegistry {
 };
 
 PayloadFactoryRegistry::PayloadFactoryRegistry(uint16_t count) {
-    this->abstractFactories = new AbstractPayloadFactory[count];
+    this->abstractFactories = new AbstractPayloadFactory *[count];
     this->factoryCount = count;
 }
 
 PayloadFactoryRegistry::~PayloadFactoryRegistry() {
-    if (this->abstractFactories != nullptr) {
-        delete this->abstractFactories;
-    }
 }
 
 void PayloadFactoryRegistry::registerFactory(uint16_t type, AbstractPayloadFactory *abstractFactory) {
@@ -40,7 +37,7 @@ AbstractPayloadFactory *PayloadFactoryRegistry::getFactory(uint16_t type) {
     if (type < this->factoryCount) {
         return this->abstractFactories[type];
     }
-    return nullptr;
+    return NULL;
 }
 
 #endif
