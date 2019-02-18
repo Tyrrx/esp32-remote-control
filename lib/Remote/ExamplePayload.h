@@ -2,17 +2,7 @@
 #define REMOTECONTROL_EXAMPLEPAYLOAD_H
 
 #include <AbstractPayload.h>
-
-#include "SSD1306.h"  // alias for `#include "SSD1306Wire.h"`
-#define SDA 4
-#define SCL 15
-#define RST 16  //RST must be set by software
-#define V2 1
-#ifdef V2  //WIFI Kit series V1 not support Vext control
-#define Vext 21
-#endif
-
-SSD1306 display(0x3c, SDA, SCL, RST);
+#include <U8g2lib.h>
 
 class ExamplePayload : public AbstractPayload {
    private:
@@ -21,6 +11,7 @@ class ExamplePayload : public AbstractPayload {
     const uint8_t type = PayloadType::EXAMPLE_PAYLOAD;
 
     String message;
+    U8G2* oled;
 
    public:
     ExamplePayload();
@@ -36,15 +27,12 @@ class ExamplePayload : public AbstractPayload {
 
     // Sets a value.
     void setString(String string);
+
+    // Inject oled;
+    void setOled(U8G2* oled);
 };
 
 ExamplePayload::ExamplePayload() {
-    pinMode(Vext, OUTPUT);
-    digitalWrite(Vext, LOW);  // OLED USE Vext as power supply, must turn ON Vext before OLED init
-    //delay(50);
-    display.init();
-    display.flipScreenVertically();
-    display.setContrast(255);
 }
 
 ExamplePayload::~ExamplePayload() {
@@ -53,8 +41,20 @@ ExamplePayload::~ExamplePayload() {
 bool ExamplePayload::execute(uint8_t* packetPayload) {
     this->message = String((char*)packetPayload);
     Serial.println(this->message);
-    display.drawString(0, 0, this->message);
-    display.display();
+    //experimental function body
+    uint8_t row = this->oled->getMaxCharHeight();
+    uint16_t pixelDrawn = 0;
+    this->oled->setCursor(0, row);
+    for (size_t i = 0; i < this->message.length() + 1; i++) {
+        if (pixelDrawn + this->oled->getMaxCharWidth() >= this->oled->getDisplayWidth()) {
+            row += this->oled->getMaxCharHeight() + 2;
+            pixelDrawn = 0;
+            this->oled->setCursor(0, row);
+        }
+        pixelDrawn += this->oled->getMaxCharWidth();
+        this->oled->print(this->message.c_str()[i]);
+    }
+    this->oled->sendBuffer();
     return true;
 }
 
@@ -70,8 +70,12 @@ bool ExamplePayload::build(Packet* packet) {
 }
 
 void ExamplePayload::setString(String string) {
-    this->payloadSize = string.length() + 1;
     this->message = string;
+}
+
+void ExamplePayload::setOled(U8G2* oled) {
+    this->oled = oled;
+    this->oled->clearBuffer();
 }
 
 #endif

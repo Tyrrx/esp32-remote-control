@@ -12,6 +12,9 @@
 #include <PacketBuilder.h>
 #include <PayloadFactoryRegistry.h>
 
+#include <U8g2lib.h>
+#include <Wire.h>
+
 class Remote {
    public:
     Remote();
@@ -30,6 +33,7 @@ class Remote {
 
     PayloadFactoryRegistry *registry;
     PacketBuilder *packetBuilder;
+    U8G2 *oled;
 
    private:
     // General settings of WIFI LoRa 32
@@ -51,8 +55,6 @@ class Remote {
     const uint8_t sda = 4;
     const uint8_t scl = 15;
     const uint8_t rstOled = 16;
-    const uint8_t light = 25;
-    const uint8_t vext = 21;
 
     // Key for encryption
     uint8_t keySize = 16;
@@ -70,6 +72,10 @@ class Remote {
 };
 
 Remote::Remote() {
+    this->oled = new U8G2_SSD1306_128X64_NONAME_F_SW_I2C(U8G2_R0, this->scl, this->sda, this->rstOled);
+    this->oled->begin();
+    this->oled->setFont(u8g2_font_5x8_mf);
+
     this->txPower = 10;
     this->initStatus = this->setupLoRa();
 
@@ -78,7 +84,7 @@ Remote::Remote() {
         this->initStatus = false;
     }
     this->registry = new PayloadFactoryRegistry(1);
-    this->registry->registerFactory(PayloadType::EXAMPLE_PAYLOAD, new ExamplePayloadFactory());
+    this->registry->registerFactory(PayloadType::EXAMPLE_PAYLOAD, new ExamplePayloadFactory(this->oled));
 }
 
 bool Remote::receive() {
