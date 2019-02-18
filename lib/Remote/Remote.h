@@ -19,8 +19,14 @@ class Remote {
     // Receives data and executes it. Returns bool from AbstractPayload execute().
     bool receive();
 
+    //
+    void receiveCallback(int packetSize);
+
     // Sends a given specific Payload. Returns sent delay.
     uint32_t send(AbstractPayload *abstractPayload);
+
+    // Returns true if remote setup was successful.
+    bool initSuccsess();
 
     PayloadFactoryRegistry *registry;
     PacketBuilder *packetBuilder;
@@ -41,26 +47,36 @@ class Remote {
     const uint8_t rst = 14;   // GPIO14 -- SX1278's RESET
     const uint8_t di0 = 26;   // GPIO26 -- SX1278's IRQ(Interrupt Request)
 
+    // Pin definetion of OLED
+    const uint8_t sda = 4;
+    const uint8_t scl = 15;
+    const uint8_t rstOled = 16;
+    const uint8_t light = 25;
+    const uint8_t vext = 21;
+
+    // Key for encryption
     uint8_t keySize = 16;
     uint8_t key[16] = {0xfe, 0xaa, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
                        0x6d, 0xaa, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08};
 
+    // Transmission power
     uint8_t txPower;
 
-    bool valid;
+    // Init status flag
+    bool initStatus;
 
+    // Sets up LoRa library and hardware.
     bool setupLoRa();
 };
 
 Remote::Remote() {
     this->txPower = 10;
-    this->valid = this->setupLoRa();
+    this->initStatus = this->setupLoRa();
 
     this->packetBuilder = new PacketBuilder();
     if (!this->packetBuilder->setCipherKey(this->key, this->keySize)) {
-        this->valid = false;
+        this->initStatus = false;
     }
-
     this->registry = new PayloadFactoryRegistry(1);
     this->registry->registerFactory(PayloadType::EXAMPLE_PAYLOAD, new ExamplePayloadFactory());
 }
@@ -90,6 +106,10 @@ uint32_t Remote::send(AbstractPayload *abstractPayload) {
     LoRa.endPacket();
     delete packet;
     return millis() - time;
+}
+
+bool Remote::initSuccsess() {
+    return this->initStatus;
 }
 
 bool Remote::setupLoRa() {

@@ -63,6 +63,7 @@ class Packet {
     uint32_t getTimestamp();
     void setTimestamp();
 
+    // Describes the specific indexes in the packetHeaderBuffer and the size of it.
     enum {
         PAYLOAD_SIZE_ADDRESS,
         HEADER_SIZE_ADDRESS,

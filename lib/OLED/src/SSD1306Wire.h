@@ -31,46 +31,48 @@
 #ifndef SSD1306Wire_h
 #define SSD1306Wire_h
 
-#include "OLEDDisplay.h"
+#include <Arduino.h>
 #include <Wire.h>
-
+#include "OLEDDisplay.h"
 
 class SSD1306Wire : public OLEDDisplay {
-  private:
-      uint8_t             _address;
-      uint8_t             _sda;
-      uint8_t             _scl;
-      uint8_t             _rst;
-      bool                _doI2cAutoInit = false;
+   private:
+    uint8_t _address;
+    uint8_t _sda;
+    uint8_t _scl;
+    uint8_t _rst;
+    bool _doI2cAutoInit = false;
 
-  public:
+   public:
     SSD1306Wire(uint8_t _address, uint8_t _sda, uint8_t _scl, uint8_t _rst, OLEDDISPLAY_GEOMETRY g = GEOMETRY_128_64) {
-      setGeometry(g);
+        setGeometry(g);
 
-      this->_address = _address;
-      this->_sda = _sda;
-      this->_scl = _scl;
-      this->_rst = _rst;
+        this->_address = _address;
+        this->_sda = _sda;
+        this->_scl = _scl;
+        this->_rst = _rst;
     }
 
+    ~SSD1306Wire() {
+    }
 
     bool connect() {
-    		pinMode(_rst,OUTPUT);
-    		digitalWrite(_rst, LOW);
-    		delay(50);
-    		digitalWrite(_rst, HIGH);
+        pinMode(_rst, OUTPUT);
+        digitalWrite(_rst, LOW);
+        delay(50);
+        digitalWrite(_rst, HIGH);
 
-		Wire.begin(this->_sda, this->_scl);
-		// Let's use ~700khz if ESP8266 is in 160Mhz mode
-		// this will be limited to ~400khz if the ESP8266 in 80Mhz mode.
-		Wire.setClock(700000);
-		return true;
+        Wire.begin(this->_sda, this->_scl);
+        // Let's use ~700khz if ESP8266 is in 160Mhz mode
+        // this will be limited to ~400khz if the ESP8266 in 80Mhz mode.
+        Wire.setClock(700000);
+        return true;
     }
 
     void display(void) {
-		initI2cIfNeccesary();
-		const int x_offset = (128 - this->width()) / 2;
-		#ifdef OLEDDISPLAY_DOUBLE_BUFFER
+        initI2cIfNeccesary();
+        const int x_offset = (128 - this->width()) / 2;
+#ifdef OLEDDISPLAY_DOUBLE_BUFFER
         uint8_t minBoundY = UINT8_MAX;
         uint8_t maxBoundY = 0;
 
@@ -81,17 +83,17 @@ class SSD1306Wire : public OLEDDisplay {
         // Calculate the Y bounding box of changes
         // and copy buffer[pos] to buffer_back[pos];
         for (y = 0; y < (this->height() / 8); y++) {
-          for (x = 0; x < this->width(); x++) {
-           uint16_t pos = x + y * this->width();
-           if (buffer[pos] != buffer_back[pos]) {
-             minBoundY = _min(minBoundY, y);
-             maxBoundY = _max(maxBoundY, y);
-             minBoundX = _min(minBoundX, x);
-             maxBoundX = _max(maxBoundX, x);
-           }
-           buffer_back[pos] = buffer[pos];
-         }
-         yield();
+            for (x = 0; x < this->width(); x++) {
+                uint16_t pos = x + y * this->width();
+                if (buffer[pos] != buffer_back[pos]) {
+                    minBoundY = _min(minBoundY, y);
+                    maxBoundY = _max(maxBoundY, y);
+                    minBoundX = _min(minBoundX, x);
+                    maxBoundX = _max(maxBoundX, x);
+                }
+                buffer_back[pos] = buffer[pos];
+            }
+            yield();
         }
 
         // If the minBoundY wasn't updated
@@ -110,26 +112,26 @@ class SSD1306Wire : public OLEDDisplay {
 
         byte k = 0;
         for (y = minBoundY; y <= maxBoundY; y++) {
-          for (x = minBoundX; x <= maxBoundX; x++) {
-            if (k == 0) {
-              Wire.beginTransmission(_address);
-              Wire.write(0x40);
-            }
+            for (x = minBoundX; x <= maxBoundX; x++) {
+                if (k == 0) {
+                    Wire.beginTransmission(_address);
+                    Wire.write(0x40);
+                }
 
-            Wire.write(buffer[x + y * this->width()]);
-            k++;
-            if (k == 16)  {
-              Wire.endTransmission();
-              k = 0;
+                Wire.write(buffer[x + y * this->width()]);
+                k++;
+                if (k == 16) {
+                    Wire.endTransmission();
+                    k = 0;
+                }
             }
-          }
-          yield();
+            yield();
         }
 
         if (k != 0) {
-          Wire.endTransmission();
+            Wire.endTransmission();
         }
-      #else
+#else
 
         sendCommand(COLUMNADDR);
         sendCommand(x_offset);
@@ -140,43 +142,42 @@ class SSD1306Wire : public OLEDDisplay {
         sendCommand((this->height() / 8) - 1);
 
         if (geometry == GEOMETRY_128_64) {
-          sendCommand(0x7);
+            sendCommand(0x7);
         } else if (geometry == GEOMETRY_128_32) {
-          sendCommand(0x3);
+            sendCommand(0x3);
         }
 
-        for (uint16_t i=0; i < displayBufferSize; i++) {
-          Wire.beginTransmission(this->_address);
-          Wire.write(0x40);
-          for (uint8_t x = 0; x < 16; x++) {
-            Wire.write(buffer[i]);
-            i++;
-          }
-          i--;
-          Wire.endTransmission();
+        for (uint16_t i = 0; i < displayBufferSize; i++) {
+            Wire.beginTransmission(this->_address);
+            Wire.write(0x40);
+            for (uint8_t x = 0; x < 16; x++) {
+                Wire.write(buffer[i]);
+                i++;
+            }
+            i--;
+            Wire.endTransmission();
         }
-      #endif
+#endif
     }
 
     void setI2cAutoInit(bool doI2cAutoInit) {
-      _doI2cAutoInit = doI2cAutoInit;
+        _doI2cAutoInit = doI2cAutoInit;
     }
 
-  private:
-    inline void sendCommand(uint8_t command) __attribute__((always_inline)){
-      initI2cIfNeccesary();
-      Wire.beginTransmission(_address);
-      Wire.write(0x80);
-      Wire.write(command);
-      Wire.endTransmission();
+   private:
+    inline void sendCommand(uint8_t command) __attribute__((always_inline)) {
+        initI2cIfNeccesary();
+        Wire.beginTransmission(_address);
+        Wire.write(0x80);
+        Wire.write(command);
+        Wire.endTransmission();
     }
 
     void initI2cIfNeccesary() {
-      if (_doI2cAutoInit) {
-        Wire.begin(this->_sda, this->_scl);
-      }
+        if (_doI2cAutoInit) {
+            Wire.begin(this->_sda, this->_scl);
+        }
     }
-
 };
 
 #endif
