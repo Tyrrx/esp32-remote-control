@@ -11,7 +11,10 @@ class AbstractPayload {
     AbstractPayload();
     virtual ~AbstractPayload();
 
+    // Virtual interface to execute the AbstractPayload with given data.
     virtual bool execute(uint8_t* packetPayload);
+
+    //Virtual interface to build a given Packet data from an AbstractPayload.
     virtual bool build(Packet* packet);
 };
 

@@ -10,6 +10,9 @@ class ExamplePayloadFactory : public AbstractPayloadFactory {
    public:
     ExamplePayloadFactory();
     ~ExamplePayloadFactory();
+
+    // Creates a new ExamplePayload with given packetHeader.
+    // Implements AbstractPayloadFactory create().
     AbstractPayload* create(uint8_t* packetHeader);
 };
 

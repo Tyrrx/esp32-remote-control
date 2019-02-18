@@ -9,6 +9,7 @@ class AbstractPayloadFactory {
     AbstractPayloadFactory();
     virtual ~AbstractPayloadFactory();
 
+    // Virtual interface to create a new AbstractPayload.
     virtual AbstractPayload *create(uint8_t *packetHeader);
 };
 

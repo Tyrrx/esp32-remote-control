@@ -62,10 +62,17 @@ class Packet {
 
     uint32_t getTimestamp();
     void setTimestamp();
+
+    enum {
+        PAYLOAD_SIZE_ADDRESS,
+        HEADER_SIZE_ADDRESS,
+        TYPE_ADDRESS,
+        PACKETHEADER_SIZE = 3,
+    };
 };
 
 Packet::Packet(/* args */) {
-    this->createPacketHeaderBuffer(3);
+    this->createPacketHeaderBuffer(Packet::PACKETHEADER_SIZE);
 }
 
 Packet::~Packet() {

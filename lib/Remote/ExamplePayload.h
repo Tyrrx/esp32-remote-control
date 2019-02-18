@@ -6,7 +6,7 @@
 class ExamplePayload : public AbstractPayload {
    private:
     const uint8_t headerSize = 1;
-    const uint8_t payloadSize = 1;
+    const uint8_t payloadSize = 20;
     const uint8_t type = PayloadType::EXAMPLE_PAYLOAD;
 
     uint8_t payload;
@@ -14,9 +14,16 @@ class ExamplePayload : public AbstractPayload {
    public:
     ExamplePayload();
     ~ExamplePayload();
+
+    // Executes ExamplePayload with given data.
+    // Implements AbstractPayload execute().
     bool execute(uint8_t* packetPayload);
+
+    // Builds a given Packets data.
+    // Implements AbstractPayload build().
     bool build(Packet* packet);
 
+    // Sets a value.
     void setPayload(uint8_t pl);
 };
 
@@ -28,7 +35,7 @@ ExamplePayload::~ExamplePayload() {
 
 bool ExamplePayload::execute(uint8_t* packetPayload) {
     this->payload = packetPayload[0];
-    Serial.print(this->payload);
+    Serial.println(this->payload);
     return true;
 }
 

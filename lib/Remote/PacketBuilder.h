@@ -29,30 +29,34 @@ class PacketBuilder {
     void prepareCipher();
 
    public:
-    PacketBuilder(uint8_t* key, uint32_t keySize);
+    PacketBuilder();
     ~PacketBuilder();
 
+    // Creates a new Packet with specific buffer size.
     Packet* create(uint8_t bufferSize);
 
+    // Creates a new Packet without specific buffer size.
     Packet* create();
 
+    // Encodes a Payload. Returns a new Packet.
     Packet* encode(AbstractPayload* abstractPayload);
 
+    // Decodes a given Packet.
     bool decode(Packet* packet);
+
+    // Setup a cipher key. returns true if keysize is valid.
+    bool setCipherKey(uint8_t* key, uint32_t keySize);
 };
 
-PacketBuilder::PacketBuilder(uint8_t* key, uint32_t keySize) {
+PacketBuilder::PacketBuilder() {
     this->cipher = new GCM<AES128>;
-    if (this->cipher->keySize() == keySize) {
-        this->keySize = this->cipher->keySize();
-        this->ivSize = this->cipher->ivSize();
-        this->key = new uint8_t[this->keySize];
-        this->iv = new uint8_t[this->ivSize];
-        memcpy(this->key, key, keySize);
-        //replace with true random iv
-        for (size_t i = 0; i < this->ivSize; i++) {
-            this->iv[i] = 255;
-        }
+    this->keySize = this->cipher->keySize();
+    this->ivSize = this->cipher->ivSize();
+    this->key = new uint8_t[this->keySize];
+    this->iv = new uint8_t[this->ivSize];
+    //replace with random iv
+    for (size_t i = 0; i < this->ivSize; i++) {
+        this->iv[i] = 255;
     }
 }
 
@@ -118,15 +122,15 @@ void PacketBuilder::buildPacketBuffer(Packet* packet) {
 }
 
 void PacketBuilder::parsePacketHeader(Packet* packet) {
-    packet->createHeaderBuffer(packet->getBuffer()[0]);
-    packet->createPayloadBuffer(packet->getBuffer()[1]);
-    packet->setPacketType(packet->getBuffer()[2]);
+    packet->createHeaderBuffer(packet->getBuffer()[Packet::HEADER_SIZE_ADDRESS]);
+    packet->createPayloadBuffer(packet->getBuffer()[Packet::PAYLOAD_SIZE_ADDRESS]);
+    packet->setPacketType(packet->getBuffer()[Packet::TYPE_ADDRESS]);
 }
 
 void PacketBuilder::buildPacketHeader(Packet* packet) {
-    packet->getPacketHeader()[0] = packet->getHeaderSize();
-    packet->getPacketHeader()[1] = packet->getPayloadSize();
-    packet->getPacketHeader()[2] = packet->getPacketType();
+    packet->getPacketHeader()[Packet::HEADER_SIZE_ADDRESS] = packet->getHeaderSize();
+    packet->getPacketHeader()[Packet::PAYLOAD_SIZE_ADDRESS] = packet->getPayloadSize();
+    packet->getPacketHeader()[Packet::TYPE_ADDRESS] = packet->getPacketType();
 }
 
 bool PacketBuilder::encryptPacket(Packet* packet) {
@@ -156,4 +160,11 @@ void PacketBuilder::prepareCipher() {
     this->cipher->setIV(this->iv, this->cipher->ivSize());
 }
 
+bool PacketBuilder::setCipherKey(uint8_t* key, uint32_t keySize) {
+    if (this->cipher->keySize() == keySize) {
+        memcpy(this->key, key, keySize);
+        return true;
+    }
+    return false;
+}
 #endif

@@ -14,11 +14,13 @@
 
 class Remote {
    public:
-    Remote(uint8_t *key, uint32_t keySize);
+    Remote();
 
+    // Receives data and executes it. Returns bool from AbstractPayload execute().
     bool receive();
 
-    bool send(AbstractPayload *abstractPayload);
+    // Sends a given specific Payload. Returns sent delay.
+    uint32_t send(AbstractPayload *abstractPayload);
 
     PayloadFactoryRegistry *registry;
     PacketBuilder *packetBuilder;
@@ -39,6 +41,10 @@ class Remote {
     const uint8_t rst = 14;   // GPIO14 -- SX1278's RESET
     const uint8_t di0 = 26;   // GPIO26 -- SX1278's IRQ(Interrupt Request)
 
+    uint8_t keySize = 16;
+    uint8_t key[16] = {0xfe, 0xaa, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
+                       0x6d, 0xaa, 0x8f, 0x94, 0x67, 0x30, 0x83, 0x08};
+
     uint8_t txPower;
 
     bool valid;
@@ -46,35 +52,24 @@ class Remote {
     bool setupLoRa();
 };
 
-Remote::Remote(uint8_t *key, uint32_t keySize) {
+Remote::Remote() {
     this->txPower = 10;
     this->valid = this->setupLoRa();
 
-    this->packetBuilder = new PacketBuilder(key, keySize);
+    this->packetBuilder = new PacketBuilder();
+    if (!this->packetBuilder->setCipherKey(this->key, this->keySize)) {
+        this->valid = false;
+    }
+
     this->registry = new PayloadFactoryRegistry(1);
     this->registry->registerFactory(PayloadType::EXAMPLE_PAYLOAD, new ExamplePayloadFactory());
 }
-
-/*
-bool Remote::updateControl(int *channels, int size) {
-    if (size <= channelCount) {
-        for (int i = 0; i < size; ++i) {
-            int val = channels[i];
-            controlBytes[2 * i] = (byte)(val & 0xff);
-            controlBytes[2 * i + 1] = (byte)(val >> 8);
-        }
-        return true;
-    }
-    return false;
-}
-*/
 
 bool Remote::receive() {
     uint16_t packetSize = LoRa.parsePacket();
     bool status = false;
     if (packetSize) {
         Packet *packet = this->packetBuilder->create(packetSize);
-        //SmartPtr<Packet> packet(this->packetBuilder->create(packetSize));
         LoRa.readBytes(packet->getBuffer(), packet->getBufferSize());
         packet->setRssi(LoRa.packetRssi());
         if (this->packetBuilder->decode(packet)) {
@@ -87,15 +82,14 @@ bool Remote::receive() {
     return status;
 }
 
-bool Remote::send(AbstractPayload *abstractPayload) {
+uint32_t Remote::send(AbstractPayload *abstractPayload) {
     uint32_t time = millis();
     Packet *packet = this->packetBuilder->encode(abstractPayload);
     LoRa.beginPacket();
     LoRa.write(packet->getBuffer(), packet->getBufferSize());
     LoRa.endPacket();
-    time = millis() - time;
     delete packet;
-    return true;
+    return millis() - time;
 }
 
 bool Remote::setupLoRa() {

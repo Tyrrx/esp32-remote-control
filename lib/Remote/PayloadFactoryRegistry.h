@@ -14,8 +14,10 @@ class PayloadFactoryRegistry {
     PayloadFactoryRegistry(uint16_t count);
     ~PayloadFactoryRegistry();
 
+    // Registers a PayloadFactory with a type at the registry.
     void registerFactory(uint16_t type, AbstractPayloadFactory *abstractFactory);
 
+    // Returns a specific PayloadFactory matching the type.
     AbstractPayloadFactory *getFactory(uint16_t type);
 };
 
