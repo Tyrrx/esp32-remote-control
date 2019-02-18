@@ -7,7 +7,7 @@ class AbstractPayloadFactory {
    private:
    public:
     AbstractPayloadFactory();
-    ~AbstractPayloadFactory();
+    virtual ~AbstractPayloadFactory();
 
     virtual AbstractPayload *create(uint8_t *packetHeader);
 };

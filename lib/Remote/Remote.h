@@ -11,7 +11,6 @@
 
 #include <PacketBuilder.h>
 #include <PayloadFactoryRegistry.h>
-#include <SmartPtr.h>
 
 class Remote {
    public:
@@ -20,6 +19,9 @@ class Remote {
     bool receive();
 
     bool send(AbstractPayload *abstractPayload);
+
+    PayloadFactoryRegistry *registry;
+    PacketBuilder *packetBuilder;
 
    private:
     // General settings of WIFI LoRa 32
@@ -40,9 +42,6 @@ class Remote {
     uint8_t txPower;
 
     bool valid;
-
-    PayloadFactoryRegistry *registry;
-    PacketBuilder *packetBuilder;
 
     bool setupLoRa();
 };
@@ -72,17 +71,20 @@ bool Remote::updateControl(int *channels, int size) {
 
 bool Remote::receive() {
     uint16_t packetSize = LoRa.parsePacket();
+    bool status = false;
     if (packetSize) {
         Packet *packet = this->packetBuilder->create(packetSize);
         //SmartPtr<Packet> packet(this->packetBuilder->create(packetSize));
         LoRa.readBytes(packet->getBuffer(), packet->getBufferSize());
         packet->setRssi(LoRa.packetRssi());
         if (this->packetBuilder->decode(packet)) {
-            this->registry->getFactory(packet->getPacketType())->create(packet->getHeader())->execute(packet->getPayload());
-            return true;
+            AbstractPayload *payload = this->registry->getFactory(packet->getPacketType())->create(packet->getHeader());
+            status = payload->execute(packet->getPayload());
+            delete payload;
         }
+        delete packet;
     }
-    return false;
+    return status;
 }
 
 bool Remote::send(AbstractPayload *abstractPayload) {
@@ -92,6 +94,7 @@ bool Remote::send(AbstractPayload *abstractPayload) {
     LoRa.write(packet->getBuffer(), packet->getBufferSize());
     LoRa.endPacket();
     time = millis() - time;
+    delete packet;
     return true;
 }
 

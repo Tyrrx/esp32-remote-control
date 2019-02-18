@@ -9,7 +9,7 @@ class AbstractPayload {
     /* data */
    public:
     AbstractPayload();
-    ~AbstractPayload();
+    virtual ~AbstractPayload();
 
     virtual bool execute(uint8_t* packetPayload);
     virtual bool build(Packet* packet);

@@ -44,12 +44,15 @@ class PacketBuilder {
 PacketBuilder::PacketBuilder(uint8_t* key, uint32_t keySize) {
     this->cipher = new GCM<AES128>;
     if (this->cipher->keySize() == keySize) {
-        this->key = new uint8_t[this->cipher->keySize()];
-        this->iv = new uint8_t[this->cipher->ivSize()];
-        memcpy(this->key, key, keySize);
-        //create iv
-        this->keySize = keySize;
+        this->keySize = this->cipher->keySize();
         this->ivSize = this->cipher->ivSize();
+        this->key = new uint8_t[this->keySize];
+        this->iv = new uint8_t[this->ivSize];
+        memcpy(this->key, key, keySize);
+        //replace with true random iv
+        for (size_t i = 0; i < this->ivSize; i++) {
+            this->iv[i] = 255;
+        }
     }
 }
 
@@ -87,18 +90,18 @@ Packet* PacketBuilder::encode(AbstractPayload* abstractPayload) {
 bool PacketBuilder::decode(Packet* packet) {
     this->parsePacketHeader(packet);
     this->parsePacketBuffer(packet);
-    return this->encryptPacket(packet);
+    return this->decryptPacket(packet);
 }
 
 void PacketBuilder::parsePacketBuffer(Packet* packet) {
     packet->createHashBuffer(this->cipher->tagSize());
     uint8_t startIndex = 0;
     memcpy(packet->getPacketHeader(), &packet->getBuffer()[startIndex], packet->getPacketHeaderSize() * sizeof(uint8_t));
-    startIndex += packet->getPacketHeaderSize();
+    startIndex += packet->getPacketHeaderSize() * sizeof(uint8_t);
     memcpy(packet->getHeader(), &packet->getBuffer()[startIndex], packet->getHeaderSize() * sizeof(uint8_t));
-    startIndex += packet->getHeaderSize();
+    startIndex += packet->getHeaderSize() * sizeof(uint8_t);
     memcpy(packet->getHash(), &packet->getBuffer()[startIndex], packet->getHashSize() * sizeof(uint8_t));
-    startIndex += packet->getHashSize();
+    startIndex += packet->getHashSize() * sizeof(uint8_t);
     memcpy(packet->getPayload(), &packet->getBuffer()[startIndex], packet->getPayloadSize() * sizeof(uint8_t));
 }
 
@@ -106,11 +109,11 @@ void PacketBuilder::buildPacketBuffer(Packet* packet) {
     packet->createBuffer(packet->getPacketHeaderSize() + packet->getHeaderSize() + packet->getHashSize() + packet->getPayloadSize());
     uint8_t startIndex = 0;
     memcpy(&packet->getBuffer()[startIndex], packet->getPacketHeader(), packet->getPacketHeaderSize() * sizeof(uint8_t));
-    startIndex += packet->getPacketHeaderSize();
+    startIndex += packet->getPacketHeaderSize() * sizeof(uint8_t);
     memcpy(&packet->getBuffer()[startIndex], packet->getHeader(), packet->getHeaderSize() * sizeof(uint8_t));
-    startIndex += packet->getHeaderSize();
+    startIndex += packet->getHeaderSize() * sizeof(uint8_t);
     memcpy(&packet->getBuffer()[startIndex], packet->getHash(), packet->getHashSize() * sizeof(uint8_t));
-    startIndex += packet->getHashSize();
+    startIndex += packet->getHashSize() * sizeof(uint8_t);
     memcpy(&packet->getBuffer()[startIndex], packet->getPayload(), packet->getPayloadSize() * sizeof(uint8_t));
 }
 
@@ -121,9 +124,9 @@ void PacketBuilder::parsePacketHeader(Packet* packet) {
 }
 
 void PacketBuilder::buildPacketHeader(Packet* packet) {
-    packet->getHeader()[0] = packet->getHeaderSize();
-    packet->getHeader()[1] = packet->getPayloadSize();
-    packet->getHeader()[2] = packet->getPacketType();
+    packet->getPacketHeader()[0] = packet->getHeaderSize();
+    packet->getPacketHeader()[1] = packet->getPayloadSize();
+    packet->getPacketHeader()[2] = packet->getPacketType();
 }
 
 bool PacketBuilder::encryptPacket(Packet* packet) {
@@ -131,6 +134,7 @@ bool PacketBuilder::encryptPacket(Packet* packet) {
     this->cipher->addAuthData(packet->getPacketHeader(), packet->getPacketHeaderSize());
     this->cipher->addAuthData(packet->getHeader(), packet->getHeaderSize());
     this->cipher->encrypt(packet->getPayload(), packet->getPayload(), packet->getPayloadSize());
+    packet->createHashBuffer(this->cipher->tagSize());
     this->cipher->computeTag(packet->getHash(), packet->getHashSize());
     return true;
 }
