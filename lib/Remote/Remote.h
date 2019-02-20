@@ -23,7 +23,7 @@ class Remote {
     bool receive();
 
     //
-    void receiveCallback(int packetSize);
+    //void receiveCallback(int packetSize);
 
     // Sends a given specific Payload. Returns sent delay.
     uint32_t send(AbstractPayload *abstractPayload);
