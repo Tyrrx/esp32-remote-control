@@ -2,7 +2,7 @@
 #define REMOTECONTROL_EXAMPLEPAYLOAD_H
 
 #include <AbstractPayload.h>
-#include <U8g2lib.h>
+#include <Oled.h>
 
 class ExamplePayload : public AbstractPayload {
    private:
@@ -11,10 +11,11 @@ class ExamplePayload : public AbstractPayload {
     const uint8_t type = PayloadType::EXAMPLE_PAYLOAD;
 
     String message;
-    U8G2* oled;
+    Oled* oled;
 
    public:
     ExamplePayload();
+    ExamplePayload(Oled* oled);
     ~ExamplePayload();
 
     // Executes ExamplePayload with given data.
@@ -27,21 +28,21 @@ class ExamplePayload : public AbstractPayload {
 
     // Sets a value.
     void setString(String string);
-
-    // Inject oled;
-    void setOled(U8G2* oled);
 };
 
-ExamplePayload::ExamplePayload() {
+ExamplePayload::ExamplePayload() {}
+
+ExamplePayload::ExamplePayload(Oled* oled) {
+    this->oled = oled;
+    this->oled->clearBuffer();
 }
 
-ExamplePayload::~ExamplePayload() {
-}
+ExamplePayload::~ExamplePayload() {}
 
 bool ExamplePayload::execute(uint8_t* packetPayload) {
     this->message = String((char*)packetPayload);
     Serial.println(this->message);
-    //experimental function body
+    // experimental function body
     uint8_t row = this->oled->getMaxCharHeight();
     uint16_t pixelDrawn = 0;
     this->oled->setCursor(0, row);
@@ -69,13 +70,6 @@ bool ExamplePayload::build(Packet* packet) {
     return true;
 }
 
-void ExamplePayload::setString(String string) {
-    this->message = string;
-}
-
-void ExamplePayload::setOled(U8G2* oled) {
-    this->oled = oled;
-    this->oled->clearBuffer();
-}
+void ExamplePayload::setString(String string) { this->message = string; }
 
 #endif

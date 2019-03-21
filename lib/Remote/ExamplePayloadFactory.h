@@ -4,14 +4,14 @@
 #include <AbstractPayload.h>
 #include <AbstractPayloadFactory.h>
 #include <ExamplePayload.h>
-#include <U8g2lib.h>
+#include <Oled.h>
 
 class ExamplePayloadFactory : public AbstractPayloadFactory {
    private:
-    U8G2* oled;
+    Oled* oled;
 
    public:
-    ExamplePayloadFactory(U8G2* oled);
+    ExamplePayloadFactory(Oled* oled);
     ~ExamplePayloadFactory();
 
     // Creates a new ExamplePayload with given packetHeader.
@@ -19,17 +19,10 @@ class ExamplePayloadFactory : public AbstractPayloadFactory {
     AbstractPayload* create(uint8_t* packetHeader);
 };
 
-ExamplePayloadFactory::ExamplePayloadFactory(U8G2* oled) {
-    this->oled = oled;
-}
+ExamplePayloadFactory::ExamplePayloadFactory(Oled* oled) { this->oled = oled; }
 
-ExamplePayloadFactory::~ExamplePayloadFactory() {
-}
+ExamplePayloadFactory::~ExamplePayloadFactory() {}
 
-AbstractPayload* ExamplePayloadFactory::create(uint8_t* packetHeader) {
-    ExamplePayload* payload = new ExamplePayload();
-    payload->setOled(this->oled);
-    return payload;
-}
+AbstractPayload* ExamplePayloadFactory::create(uint8_t* packetHeader) { return new ExamplePayload(this->oled); }
 
 #endif

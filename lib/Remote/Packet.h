@@ -12,11 +12,11 @@ class Packet {
     uint8_t headerSize;
     uint8_t packetHeaderSize;
 
-    uint8_t *buffer;
-    uint8_t *payload;
-    uint8_t *hash;
-    uint8_t *header;
-    uint8_t *packetHeader;
+    uint8_t* buffer;
+    uint8_t* payload;
+    uint8_t* hash;
+    uint8_t* header;
+    uint8_t* packetHeader;
 
     int16_t rssi;
     uint32_t timestamp;
@@ -36,11 +36,11 @@ class Packet {
     void createHeaderBuffer(uint8_t size);
     void createPacketHeaderBuffer(uint8_t size);
 
-    uint8_t *getBuffer();
-    uint8_t *getPayload();
-    uint8_t *getHash();
-    uint8_t *getHeader();
-    uint8_t *getPacketHeader();
+    uint8_t* getBuffer();
+    uint8_t* getPayload();
+    uint8_t* getHash();
+    uint8_t* getHeader();
+    uint8_t* getPacketHeader();
 
     void setBufferSize(uint8_t size);
     void setPayloadSize(uint8_t size);
@@ -72,9 +72,7 @@ class Packet {
     };
 };
 
-Packet::Packet(/* args */) {
-    this->createPacketHeaderBuffer(Packet::PACKETHEADER_SIZE);
-}
+Packet::Packet(/* args */) { this->createPacketHeaderBuffer(Packet::PACKETHEADER_SIZE); }
 
 Packet::~Packet() {
     if (this->buffer) {
@@ -120,11 +118,11 @@ void Packet::createPacketHeaderBuffer(uint8_t size) {
     this->packetHeader = new uint8_t[size];
 }
 
-uint8_t *Packet::getBuffer() { return this->buffer; }
-uint8_t *Packet::getPayload() { return this->payload; }
-uint8_t *Packet::getHash() { return this->hash; }
-uint8_t *Packet::getHeader() { return this->header; }
-uint8_t *Packet::getPacketHeader() { return this->packetHeader; }
+uint8_t* Packet::getBuffer() { return this->buffer; }
+uint8_t* Packet::getPayload() { return this->payload; }
+uint8_t* Packet::getHash() { return this->hash; }
+uint8_t* Packet::getHeader() { return this->header; }
+uint8_t* Packet::getPacketHeader() { return this->packetHeader; }
 
 void Packet::setBufferSize(uint8_t size) { this->bufferSize = size; }
 void Packet::setPayloadSize(uint8_t size) { this->payloadSize = size; }

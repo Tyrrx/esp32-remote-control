@@ -1,5 +1,5 @@
-#ifndef LORA_H
-#define LORA_H
+#ifndef LORADRIVER_H
+#define LORADRIVER_H
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -12,14 +12,14 @@
 #define PA_OUTPUT_RFO_PIN 0
 
 #if defined(__STM32F1__)
-inline unsigned char digitalPinToInterrupt(unsigned char Interrupt_pin) { return Interrupt_pin; }  //This isn't included in the stm32duino libs (yet)
-#define portOutputRegister(port) (volatile byte *)(&(port->regs->ODR))                             //These are defined in STM32F1/variants/generic_stm32f103c/variant.h but return a non byte* value
-#define portInputRegister(port) (volatile byte *)(&(port->regs->IDR))                              //These are defined in STM32F1/variants/generic_stm32f103c/variant.h but return a non byte* value
+inline unsigned char digitalPinToInterrupt(unsigned char Interrupt_pin) { return Interrupt_pin; }  // This isn't included in the stm32duino libs (yet)
+#define portOutputRegister(port) (volatile byte *)(&(port->regs->ODR))                             // These are defined in STM32F1/variants/generic_stm32f103c/variant.h but return a non byte* value
+#define portInputRegister(port) (volatile byte *)(&(port->regs->IDR))                              // These are defined in STM32F1/variants/generic_stm32f103c/variant.h but return a non byte* value
 #endif
 
-class LoRaClass : public Stream {
+class LoRaDriver : public Stream {
    public:
-    LoRaClass();
+    LoRaDriver();
 
     int begin(long frequency, bool PABOOST);
     void end();
@@ -91,7 +91,5 @@ class LoRaClass : public Stream {
     int _implicitHeaderMode;
     void (*_onReceive)(int);
 };
-
-extern LoRaClass LoRa;
 
 #endif
