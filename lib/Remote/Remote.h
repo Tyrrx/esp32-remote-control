@@ -8,9 +8,17 @@
 #include <Arduino.h>
 #include <esp_system.h>
 
+#include <ControlPayloadFactory.h>
+#include <ExamplePayloadFactory.h>
+
 #include <LoRa.h>
 #include <PacketBuilder.h>
 #include <PayloadFactoryRegistry.h>
+
+#include <ControlService.h>
+#include <FailsafeService.h>
+#include <RemoteService.h>
+#include <TelemetryService.h>
 
 #include <Oled.h>
 
@@ -31,6 +39,9 @@ class Remote {
     Oled* oled;
     LoRa* lora;
 
+    FailsafeService* failsafeService;
+    RemoteService* remoteService;
+
    private:
     // Key for encryption
     uint8_t keySize = 16;
@@ -44,12 +55,16 @@ Remote::Remote() {
     this->oled = new Oled();
     this->lora = new LoRa();
 
+    this->failsafeService = new FailsafeService();
+    this->remoteService = new RemoteService();
+
     this->packetBuilder = new PacketBuilder();
     if (!this->packetBuilder->setCipherKey(this->key, this->keySize)) {
         this->initStatus = false;
     }
-    this->registry = new PayloadFactoryRegistry(1);
+    this->registry = new PayloadFactoryRegistry(2);
     this->registry->registerFactory(PayloadType::EXAMPLE_PAYLOAD, new ExamplePayloadFactory(this->oled));
+    this->registry->registerFactory(PayloadType::CONTROL_PAYLOAD, new ControlPayloadFactory(this->remoteService));
 }
 
 Remote::~Remote() {

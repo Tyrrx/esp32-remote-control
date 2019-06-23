@@ -1,6 +1,7 @@
 #ifndef REMOTECONTROL_ABSTRACTPAYLOAD_H
 #define REMOTECONTROL_ABSTRACTPAYLOAD_H
 
+#include <Arduino.h>
 #include <Packet.h>
 #include <PayloadType.h>
 
@@ -14,14 +15,12 @@ class AbstractPayload {
     // Virtual interface to execute the AbstractPayload with given data.
     virtual bool execute(uint8_t* packetPayload);
 
-    //Virtual interface to build a given Packet data from an AbstractPayload.
+    // Virtual interface to build a given Packet data from an AbstractPayload.
     virtual bool build(Packet* packet);
 };
 
-AbstractPayload::AbstractPayload() {
-}
+AbstractPayload::AbstractPayload() {}
 
-AbstractPayload::~AbstractPayload() {
-}
+AbstractPayload::~AbstractPayload() {}
 
 #endif

@@ -11,7 +11,7 @@ class PayloadFactoryRegistry {
     uint16_t factoryCount;
 
    public:
-    PayloadFactoryRegistry(uint16_t count);
+    PayloadFactoryRegistry();
     ~PayloadFactoryRegistry();
 
     // Registers a PayloadFactory with a type at the registry.
@@ -19,11 +19,13 @@ class PayloadFactoryRegistry {
 
     // Returns a specific PayloadFactory matching the type.
     AbstractPayloadFactory *getFactory(uint16_t type);
+
+    void doubleFactoryArraySize();
 };
 
-PayloadFactoryRegistry::PayloadFactoryRegistry(uint16_t count) {
-    this->abstractFactories = new AbstractPayloadFactory *[count];
-    this->factoryCount = count;
+PayloadFactoryRegistry::PayloadFactoryRegistry() {
+    this->factoryCount = 8;
+    this->abstractFactories = new AbstractPayloadFactory *[this->factoryCount];
 }
 
 PayloadFactoryRegistry::~PayloadFactoryRegistry() {
@@ -32,6 +34,9 @@ PayloadFactoryRegistry::~PayloadFactoryRegistry() {
 void PayloadFactoryRegistry::registerFactory(uint16_t type, AbstractPayloadFactory *abstractFactory) {
     if (type < this->factoryCount) {
         this->abstractFactories[type] = abstractFactory;
+    } else() {
+        this->doubleFactoryArraySize();
+        this->registerFactory(type, abstractFactory);
     }
 }
 
@@ -40,6 +45,13 @@ AbstractPayloadFactory *PayloadFactoryRegistry::getFactory(uint16_t type) {
         return this->abstractFactories[type];
     }
     return NULL;
+}
+
+void PayloadFactoryRegistry::doubleFactoryArraySize() {
+    AbstractPayloadFactory **newAbstractFactories = new AbstractPayloadFactory *[this->factoryCount*2];
+    memcpy(newAbstractFactories,this->abstractFactories, this->factoryCount * sizeof(AbstractPayloadFactory));
+    this->abstractFactories = newAbstractFactories;
+    this->this->factoryCount = this->factoryCount*2;
 }
 
 #endif

@@ -5,6 +5,7 @@ class PayloadType {
    public:
     enum {
         EXAMPLE_PAYLOAD,
+        CONTROL_PAYLOAD,
     };
 };
 
